@@ -10,9 +10,11 @@ RUN npm install
 # Copy source code
 COPY . .
 
+# Copy environment file if it exists, otherwise use build args or defaults
+# Note: Next.js reads .env.local during 'npm run build'
+RUN if [ -f .env.production ]; then mv .env.production .env.local; fi
+
 # Build the application
-# Note: Ensure NEXT_PUBLIC_API_BASE_URL is passed if needed at build time
-# or use a runtime config approach
 RUN npm run build
 
 # Production stage
