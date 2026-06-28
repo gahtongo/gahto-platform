@@ -31,7 +31,7 @@ services:
     ports:
       - "3100:3000"
     environment:
-      - NEXT_PUBLIC_API_BASE_URL=http://localhost:8100
+      - NEXT_PUBLIC_API_BASE_URL=https://www.gahto.org
     depends_on:
       - backend
 
