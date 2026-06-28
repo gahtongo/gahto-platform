@@ -1,0 +1,25 @@
+# GAHTO Mono-repo Git Ignore
+
+# --- Backend ---
+backend/venv/
+backend/.env
+backend/__pycache__/
+backend/uploads/*
+!backend/uploads/.gitkeep
+*.py[cod]
+*$py.class
+
+# --- Frontend ---
+ghatosite/node_modules/
+ghatosite/.next/
+ghatosite/.env
+ghatosite/.env.local
+ghatosite/dist/
+ghatosite/build/
+
+# --- System & IDE ---
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+.artifacts/

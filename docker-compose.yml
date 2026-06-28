@@ -1,0 +1,39 @@
+services:
+  db:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: gahtosuperadmin
+      POSTGRES_PASSWORD: VIC3zzjj2HXpsJ6taSiilTUSWxQc7kJi
+      POSTGRES_DB: gahto
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  backend:
+    build: ./backend
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://gahtosuperadmin:VIC3zzjj2HXpsJ6taSiilTUSWxQc7kJi@db:5432/gahto
+    env_file:
+      - ./backend/.env
+    depends_on:
+      - db
+    volumes:
+      - ./backend/uploads:/app/uploads
+
+  frontend:
+    build: ./ghatosite
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
