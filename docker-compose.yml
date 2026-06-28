@@ -15,7 +15,7 @@ services:
     build: ./backend
     restart: always
     ports:
-      - "8000:8000"
+      - "8100:8000"
     environment:
       - DATABASE_URL=postgresql://gahtosuperadmin:VIC3zzjj2HXpsJ6taSiilTUSWxQc7kJi@db:5432/gahto
     env_file:
@@ -29,9 +29,9 @@ services:
     build: ./ghatosite
     restart: always
     ports:
-      - "3000:3000"
+      - "3100:3000"
     environment:
-      - NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
+      - NEXT_PUBLIC_API_BASE_URL=http://localhost:8100
     depends_on:
       - backend
 
