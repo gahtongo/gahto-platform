@@ -50,11 +50,39 @@ body {
   }
 }
 
-@keyframes ticker-scroll {
-  0% {
-    transform: translateX(0);
+@keyframes pulse-subtle {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
   }
-  100% {
-    transform: translateX(-50%);
+  50% {
+    opacity: 0.85;
+    transform: scale(0.98);
+  }
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes navbar-entry {
+  from {
+    transform: translateY(-100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.animate-navbar-entry {
+  animation: navbar-entry 0.6s ease-out forwards;
+}
+
+@media (max-width: 400px) {
+  .xs\:hidden {
+    display: none;
+  }
+  .xs\:inline {
+    display: inline;
   }
 }

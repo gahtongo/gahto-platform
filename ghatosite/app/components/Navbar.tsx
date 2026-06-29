@@ -28,24 +28,25 @@ function LiveClock() {
   if (!time) return null;
 
   return (
-    <div className="hidden lg:flex items-center gap-3 px-4 py-1 rounded-full bg-slate-50 border border-slate-100 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-      <div className="flex items-center gap-1.5 border-r border-slate-200 pr-3">
+    <div className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-1.5 rounded-full bg-slate-50 border border-slate-100 text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider shadow-sm animate-pulse-subtle">
+      <div className="flex items-center gap-1 sm:gap-1.5 border-r border-slate-200 pr-2 sm:pr-3">
         <Calendar className="h-3 w-3 text-red-500" />
-        <span>
+        <span className="hidden xs:inline">
           {time.toLocaleDateString("en-NG", {
             day: "numeric",
             month: "short",
-            year: "numeric",
           })}
         </span>
+        <span className="xs:hidden">
+          {time.getDate()}/{time.getMonth() + 1}
+        </span>
       </div>
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-1 sm:gap-1.5">
         <Clock className="h-3 w-3 text-blue-600" />
         <span className="tabular-nums">
           {time.toLocaleTimeString("en-NG", {
             hour: "numeric",
             minute: "2-digit",
-            second: "2-digit",
           })}
         </span>
       </div>
@@ -97,12 +98,12 @@ export default function Navbar() {
 
   return (
     <>
-      <header className="sticky top-0 z-[80] border-b border-gray-200 bg-white/92 backdrop-blur-xl shadow-sm">
+      <header className="sticky top-0 z-[80] border-b border-gray-200 bg-white/92 backdrop-blur-xl shadow-sm animate-navbar-entry">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
 
           <button
             onClick={() => setLogoModalOpen(true)}
-            className="group flex flex-col sm:flex-row min-w-0 items-start sm:items-center gap-1 sm:gap-3 text-left"
+            className="group flex flex-col sm:flex-row min-w-0 items-start sm:items-center gap-1 sm:gap-3 text-left shrink-0"
           >
             <div className="relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-md ring-1 ring-black/5 transition group-hover:shadow-red-500/20 sm:h-20 sm:w-20">
               <Image
@@ -130,6 +131,10 @@ export default function Navbar() {
               </p>
             </div>
           </button>
+
+          <div className="mx-2 md:hidden">
+            <LiveClock />
+          </div>
 
           <nav className="hidden items-center gap-7 md:flex">
             <LiveClock />

@@ -716,32 +716,48 @@ export default function ReportPage() {
 
         <h2 className="text-2xl font-bold text-gray-900">Review & Submit</h2>
 
-        <div className="mt-6 space-y-4 rounded-xl border bg-gray-50 p-5">
-          <p>
-            <strong>Case:</strong> {caseType}
-          </p>
-          <p>
-            <strong>Urgency:</strong> {urgency}
-          </p>
-          <p>
-            <strong>Description:</strong> {description}
-          </p>
-          <p>
-            <strong>Location:</strong> {location || "Not provided"}
-          </p>
-          <p>
-            <strong>Time:</strong> {incidentTime || "Not provided"}
-          </p>
-          <p>
-            <strong>Reporter:</strong> {getReporterLabel()}
-          </p>
-          <p>
-            <strong>Additional notes:</strong> {additionalNotes || "Not provided"}
-          </p>
-          <p>
-            <strong>Evidence:</strong>{" "}
-            {evidenceFileName ? `${evidenceFileName} (selected locally)` : "Not provided"}
-          </p>
+        <div className="mt-6 space-y-4 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+          <div className="grid gap-4 text-sm sm:text-base">
+            <div className="flex flex-col sm:flex-row sm:justify-between border-b border-gray-50 pb-3">
+              <span className="font-bold text-gray-500 uppercase tracking-wider text-[11px]">Case Type</span>
+              <span className="font-semibold text-gray-900 mt-1 sm:mt-0">{caseType}</span>
+            </div>
+
+            <div className="flex flex-col sm:flex-row sm:justify-between border-b border-gray-50 pb-3">
+              <span className="font-bold text-gray-500 uppercase tracking-wider text-[11px]">Urgency</span>
+              <span className={`font-bold mt-1 sm:mt-0 ${urgency.toLowerCase() === 'urgent' ? 'text-red-600' : 'text-gray-900'}`}>{urgency}</span>
+            </div>
+
+            <div className="flex flex-col border-b border-gray-50 pb-3">
+              <span className="font-bold text-gray-500 uppercase tracking-wider text-[11px] mb-1">Description</span>
+              <p className="text-gray-900 leading-relaxed font-medium">{description}</p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row sm:justify-between border-b border-gray-50 pb-3">
+              <span className="font-bold text-gray-500 uppercase tracking-wider text-[11px]">Location</span>
+              <span className="font-semibold text-gray-900 mt-1 sm:mt-0">{location || "Not provided"}</span>
+            </div>
+
+            <div className="flex flex-col sm:flex-row sm:justify-between border-b border-gray-50 pb-3">
+              <span className="font-bold text-gray-500 uppercase tracking-wider text-[11px]">Time</span>
+              <span className="font-semibold text-gray-900 mt-1 sm:mt-0">{incidentTime || "Not provided"}</span>
+            </div>
+
+            <div className="flex flex-col sm:flex-row sm:justify-between border-b border-gray-50 pb-3">
+              <span className="font-bold text-gray-500 uppercase tracking-wider text-[11px]">Reporter</span>
+              <span className="font-semibold text-gray-900 mt-1 sm:mt-0">{getReporterLabel()}</span>
+            </div>
+
+            <div className="flex flex-col border-b border-gray-50 pb-3">
+              <span className="font-bold text-gray-500 uppercase tracking-wider text-[11px] mb-1">Additional Notes</span>
+              <p className="text-gray-900 font-medium">{additionalNotes || "Not provided"}</p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row sm:justify-between">
+              <span className="font-bold text-gray-500 uppercase tracking-wider text-[11px]">Evidence</span>
+              <span className="font-semibold text-blue-600 mt-1 sm:mt-0">{evidenceFileName || "Not provided"}</span>
+            </div>
+          </div>
         </div>
 
         {submitError && (
