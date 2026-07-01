@@ -37,7 +37,7 @@ def send_admin_report_notification(report: Report):
 
     try:
         response = resend.Emails.send({
-            "from": f"{settings.SMTP_FROM_NAME} <notifications@resend.dev>", # Using resend default domain for now
+            "from": f"{settings.SMTP_FROM_NAME} <notifications@updates.gahto.org>",
             "to": to_emails,
             "subject": subject,
             "html": html_content,
