@@ -737,7 +737,7 @@ export default function AdminNewsPage() {
               rows={8}
               value={form.content}
               onChange={(e) => handleChange("content", e.target.value)}
-              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-900"
+              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-900 prose-custom"
               placeholder="Write the full story or press update"
             />
           </div>

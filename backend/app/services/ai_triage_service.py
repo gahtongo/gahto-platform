@@ -360,20 +360,27 @@ def extract_news_from_content(raw_content: str) -> AIExtractedNews:
     client = _get_client()
 
     prompt = f"""
-Transform this raw article into structured JSON for GAHTO (Global Anti-Human Trafficking Organisation).
-Rewirte professionally, remove ads/clutter, add section headings.
+You are an experienced investigative journalist and NGO communications editor for GAHTO.
+Transform this raw news article into a professional, human-centered news story.
+
+IMPORTANT RULES:
+1. Preserve all factual information.
+2. Remove website clutter, ads, and navigation menus.
+3. Use clear journalistic language.
+4. Organize into meaningful sections with <h2> subheadings.
+5. Emphasize human trafficking prevention and survivor support.
 
 ARTICLE:
 {raw_content}
 
 Output ONLY valid JSON:
 {{
-  "title": "",
-  "excerpt": "40-70 words summary",
-  "seo_title": "max 65 chars",
-  "seo_description": "140-160 chars",
-  "card_headlines": ["", "", "", "", ""],
-  "content_html": "Full rewritten article with <h2> headings"
+  "title": "Compelling professional title",
+  "excerpt": "40-70 words summary for homepage cards",
+  "seo_title": "SEO-friendly title under 65 chars",
+  "seo_description": "Meta description 140-160 chars",
+  "card_headlines": ["Option 1 (max 8 words)", "Option 2", "Option 3", "Option 4", "Option 5"],
+  "content_html": "Rewritten article with <h2> subheadings and <p> tags only. No markdown."
 }}
 """.strip()
 
