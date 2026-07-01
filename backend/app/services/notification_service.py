@@ -19,11 +19,15 @@ def create_notification(db: Session, payload: NotificationCreate) -> Notificatio
     return notification
 
 
-def list_notifications(db: Session, limit: int = 10) -> list[NotificationLog]:
+def list_notifications(db: Session, limit: int = 10, unread_only: bool = False) -> list[NotificationLog]:
     safe_limit = max(1, min(limit, 50))
+    query = db.query(NotificationLog)
+
+    if unread_only:
+        query = query.filter(NotificationLog.is_read.is_(False))
+
     return (
-        db.query(NotificationLog)
-        .order_by(NotificationLog.created_at.desc(), NotificationLog.id.desc())
+        query.order_by(NotificationLog.created_at.desc(), NotificationLog.id.desc())
         .limit(safe_limit)
         .all()
     )

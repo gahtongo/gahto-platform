@@ -136,13 +136,16 @@ def generate_support_reply(payload: AIChatRequest) -> AIChatResponse:
         f"{latest_user_message}"
     )
 
-    response = client.responses.create(
-        model=getattr(settings, "AI_CHAT_MODEL", "gpt-5.4"),
-        instructions=instructions,
-        input=composed_input,
+    # Use a more stable completions API
+    response = client.chat.completions.create(
+        model=getattr(settings, "AI_CHAT_MODEL", "gpt-4o"),
+        messages=[
+            {"role": "system", "content": instructions},
+            {"role": "user", "content": composed_input}
+        ]
     )
 
-    reply_text = (response.output_text or "").strip()
+    reply_text = (response.choices[0].message.content or "").strip()
 
     if not reply_text:
         reply_text = (

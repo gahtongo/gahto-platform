@@ -77,7 +77,7 @@ export default function AdminHeader({
     try {
       setIsNotificationsLoading(true);
 
-      const res = await authFetch(`${API_BASE}/api/v1/admin/notifications?limit=10`, {
+      const res = await authFetch(`${API_BASE}/api/v1/admin/notifications?limit=10&unread_only=true`, {
         cache: "no-store",
       });
 

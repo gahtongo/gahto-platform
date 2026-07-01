@@ -17,6 +17,8 @@ ghatosite/.env.local
 ghatosite/dist/
 ghatosite/build/
 
+.env
+
 # --- System & IDE ---
 .idea/
 .vscode/

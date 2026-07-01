@@ -36,12 +36,13 @@ def send_admin_report_notification(report: Report):
     """
 
     try:
-        resend.Emails.send({
+        response = resend.Emails.send({
             "from": f"{settings.SMTP_FROM_NAME} <notifications@resend.dev>", # Using resend default domain for now
             "to": to_emails,
             "subject": subject,
             "html": html_content,
         })
+        print(f"Resend response: {response}")
     except Exception as e:
         # Log error or handle silently to not block the main flow
         print(f"Failed to send email via Resend: {e}")

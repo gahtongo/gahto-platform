@@ -23,11 +23,12 @@ router = APIRouter(prefix="/admin/notifications", tags=["Notifications"])
 @router.get("", response_model=NotificationListResponse)
 def get_notifications(
     limit: int = Query(default=10, ge=1, le=50),
+    unread_only: bool = Query(default=False),
     db: Session = Depends(get_db),
     current_admin: AdminUser = Depends(get_current_admin),
 ):
     _ = current_admin
-    items = list_notifications(db, limit=limit)
+    items = list_notifications(db, limit=limit, unread_only=unread_only)
     unread_count = get_unread_count(db)
     return NotificationListResponse(items=items, unread_count=unread_count)
 
