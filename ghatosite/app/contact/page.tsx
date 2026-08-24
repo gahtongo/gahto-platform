@@ -329,39 +329,48 @@ export default function ContactPage() {
 
           <div className="mt-8 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
             <form onSubmit={handleSubmitMessage} className="space-y-4">
+              <label htmlFor="contact-name" className="block text-sm font-semibold text-slate-800">Your name</label>
               <input
+                id="contact-name"
+                required
                 type="text"
                 placeholder="Your Name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-900 sm:text-base"
+                className="w-full rounded-xl border border-slate-400 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-900 sm:text-base"
               />
 
+              <label htmlFor="contact-email" className="block text-sm font-semibold text-slate-800">Email address</label>
               <input
+                id="contact-email"
+                required
                 type="email"
                 placeholder="Your Email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-900 sm:text-base"
+                className="w-full rounded-xl border border-slate-400 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-900 sm:text-base"
               />
 
+              <label htmlFor="contact-message" className="block text-sm font-semibold text-slate-800">Message</label>
               <textarea
+                id="contact-message"
+                required
                 rows={5}
                 placeholder="Your Message"
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-900 sm:text-base"
+                className="w-full rounded-xl border border-slate-400 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-900 sm:text-base"
               />
 
               {messageSuccess && (
-                <div className="flex items-start gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+                <div role="status" className="flex items-start gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
                   <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
                   <span>{messageSuccess}</span>
                 </div>
               )}
 
               {messageError && (
-                <div className="flex items-start gap-2 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                <div role="alert" className="flex items-start gap-2 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                   <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
                   <span>{messageError}</span>
                 </div>

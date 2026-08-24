@@ -1,48 +1,81 @@
+import html
+import logging
+
 import resend
+
 from app.core.config import settings
+from app.models.contact_message import ContactMessage
 from app.models.report import Report
 
+logger = logging.getLogger(__name__)
 
-def send_admin_report_notification(report: Report):
-    if not settings.RESEND_API_KEY:
-        return
+
+class EmailDeliveryError(RuntimeError):
+    """Raised when an application notification was not accepted by Resend."""
+
+
+def _recipients(raw: str) -> list[str]:
+    return [address.strip() for address in raw.split(",") if address.strip()]
+
+
+def _send(*, subject: str, html_content: str, recipients: list[str], notification_type: str) -> str:
+    if not settings.RESEND_API_KEY.strip():
+        raise EmailDeliveryError("Resend is not configured")
+    if not settings.EMAIL_FROM.strip():
+        raise EmailDeliveryError("EMAIL_FROM is not configured")
+    if not recipients:
+        raise EmailDeliveryError(f"No recipients configured for {notification_type}")
 
     resend.api_key = settings.RESEND_API_KEY
-
-    to_emails = [e.strip() for e in settings.ADMIN_NOTIFICATION_EMAILS.split(",") if e.strip()]
-    if not to_emails:
-        return
-
-    subject = f"🚨 {report.urgency} Report: {report.case_type}"
-
-    html_content = f"""
-    <div style="font-family: sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px; border-radius: 10px;">
-        <h2 style="color: #dc2626;">New Urgent Report Submitted</h2>
-        <p><strong>Case Type:</strong> {report.case_type}</p>
-        <p><strong>Urgency:</strong> {report.urgency}</p>
-        <p><strong>Reporter:</strong> {report.reporter_name or ('Anonymous' if report.is_anonymous else 'Identified')}</p>
-        <p><strong>Location:</strong> {report.full_address or report.location or 'Not provided'}</p>
-        <p><strong>Incident Time:</strong> {report.incident_time or 'Not provided'}</p>
-        <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
-        <p><strong>Description:</strong></p>
-        <p style="background: #f9fafb; padding: 15px; border-radius: 8px;">{report.description}</p>
-        <div style="margin-top: 30px; text-align: center;">
-            <a href="{settings.FRONTEND_URL}/admin/reports"
-               style="background: #1e3a8a; color: white; padding: 12px 25px; text-decoration: none; border-radius: 8px; font-weight: bold;">
-               View in Admin Panel
-            </a>
-        </div>
-    </div>
-    """
-
     try:
         response = resend.Emails.send({
-            "from": f"{settings.SMTP_FROM_NAME} <notifications@updates.gahto.org>",
-            "to": to_emails,
+            "from": f"{settings.SMTP_FROM_NAME} <{settings.EMAIL_FROM}>",
+            "to": recipients,
             "subject": subject,
             "html": html_content,
         })
-        print(f"Resend response: {response}")
-    except Exception as e:
-        # Log error or handle silently to not block the main flow
-        print(f"Failed to send email via Resend: {e}")
+    except Exception as exc:
+        logger.exception("Email provider rejected %s notification", notification_type)
+        raise EmailDeliveryError("Email provider rejected the notification") from exc
+
+    provider_id = response.get("id") if isinstance(response, dict) else getattr(response, "id", None)
+    if not provider_id:
+        logger.error("Email provider returned no id for %s notification", notification_type)
+        raise EmailDeliveryError("Email provider did not confirm the notification")
+    logger.info("Email notification accepted type=%s provider_id=%s", notification_type, provider_id)
+    return str(provider_id)
+
+
+def send_admin_report_notification(report: Report) -> str:
+    html_content = f"""
+    <div style="font-family: sans-serif; max-width: 600px; margin: auto;">
+      <h2>New incident report submitted</h2>
+      <p><strong>Case type:</strong> {html.escape(report.case_type)}</p>
+      <p><strong>Urgency:</strong> {html.escape(report.urgency)}</p>
+      <p>Sensitive report content is available only in the protected admin panel.</p>
+      <p><a href="{html.escape(settings.FRONTEND_URL)}/admin/reports">Review report</a></p>
+    </div>
+    """
+    return _send(
+        subject=f"Incident report: {report.urgency} {report.case_type}",
+        html_content=html_content,
+        recipients=_recipients(settings.ADMIN_NOTIFICATION_EMAILS),
+        notification_type="incident_report",
+    )
+
+
+def send_contact_notification(message: ContactMessage) -> str:
+    html_content = f"""
+    <div style="font-family: sans-serif; max-width: 600px; margin: auto;">
+      <h2>New contact message</h2>
+      <p><strong>From:</strong> {html.escape(message.name)} &lt;{html.escape(message.email)}&gt;</p>
+      <p style="white-space: pre-wrap">{html.escape(message.message)}</p>
+      <p><a href="{html.escape(settings.FRONTEND_URL)}/admin/messages">Review in the admin panel</a></p>
+    </div>
+    """
+    return _send(
+        subject="New GAHTO contact message",
+        html_content=html_content,
+        recipients=_recipients(settings.CONTACT_NOTIFICATION_RECIPIENTS),
+        notification_type="contact_message",
+    )

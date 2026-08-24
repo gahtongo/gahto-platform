@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from openai import OpenAI
 
 from app.core.config import get_settings
@@ -10,6 +10,7 @@ from app.schemas.ai import (
     AIContentOptimizeRequest,
     AIContentOptimizeResponse,
 )
+from app.services.content_service import normalize_news_content
 
 settings = get_settings()
 
@@ -256,12 +257,12 @@ class AIExtractedReport(BaseModel):
 
 
 class AIExtractedNews(BaseModel):
-    title: str
-    excerpt: str
-    seo_title: str
-    seo_description: str
-    card_headlines: list[str]
-    content_html: str
+    title: str = Field(min_length=3, max_length=255)
+    excerpt: str = Field(min_length=10, max_length=500)
+    seo_title: str = Field(min_length=3, max_length=65)
+    seo_description: str = Field(min_length=20, max_length=160)
+    card_headlines: list[str] = Field(min_length=1, max_length=5)
+    content_html: str = Field(min_length=20)
 
 
 def extract_report_from_chat(messages: list) -> AIExtractedReport:
@@ -367,7 +368,7 @@ IMPORTANT RULES:
 1. Preserve all factual information.
 2. Remove website clutter, ads, and navigation menus.
 3. Use clear journalistic language.
-4. Organize into meaningful sections with <h2> subheadings.
+4. Organize the body into short paragraphs with plain-text section headings.
 5. Emphasize human trafficking prevention and survivor support.
 
 ARTICLE:
@@ -380,7 +381,7 @@ Output ONLY valid JSON:
   "seo_title": "SEO-friendly title under 65 chars",
   "seo_description": "Meta description 140-160 chars",
   "card_headlines": ["Option 1 (max 8 words)", "Option 2", "Option 3", "Option 4", "Option 5"],
-  "content_html": "Rewritten article with <h2> subheadings and <p> tags only. No markdown."
+  "content_html": "Rewritten article as plain text with blank lines between paragraphs. No HTML or Markdown."
 }}
 """.strip()
 
@@ -394,5 +395,7 @@ Output ONLY valid JSON:
     )
 
     import json
-    data = json.loads(response.choices[0].message.content)
+    raw_response = response.choices[0].message.content or ""
+    data = json.loads(raw_response)
+    data["content_html"] = normalize_news_content(data.get("content_html", ""))
     return AIExtractedNews(**data)

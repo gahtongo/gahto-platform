@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from app.models.news_post import NewsPost
 from app.schemas.news import NewsPostCreate, NewsPostUpdate
 from app.services.slug_service import ensure_unique_slug, slugify
+from app.services.content_service import normalize_news_content
 
 
 def generate_news_slug(db: Session, title: str, explicit_slug: str | None = None) -> str:
@@ -33,7 +34,7 @@ def create_news_post(
         slug=slug,
         headline=payload.headline,
         excerpt=payload.excerpt,
-        content=payload.content,
+        content=normalize_news_content(payload.content),
         category=payload.category,
         featured_image_url=payload.featured_image_url,
         video_url=payload.video_url,
@@ -53,6 +54,9 @@ def create_news_post(
 
 def update_news_post(db: Session, news_post: NewsPost, payload: NewsPostUpdate) -> NewsPost:
     data = payload.model_dump(exclude_unset=True)
+
+    if "content" in data and data["content"] is not None:
+        data["content"] = normalize_news_content(data["content"])
 
     if "slug" in data and data["slug"]:
         proposed_slug = slugify(data["slug"])

@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 class ReportCreate(BaseModel):
     case_type: str = Field(default="Suspected Trafficking", min_length=2, max_length=120)
     urgency: str = Field(default="Urgent", min_length=2, max_length=50)
-    description: str = Field(min_length=10)
+    description: str = Field(min_length=10, max_length=10000)
 
     location: str | None = Field(default=None, max_length=255)
     incident_time: str | None = Field(default=None, max_length=255)
@@ -16,7 +16,7 @@ class ReportCreate(BaseModel):
     country: str | None = None
     postal_code: str | None = None
     nearby_landmark: str | None = None
-    additional_notes: str | None = None
+    additional_notes: str | None = Field(default=None, max_length=5000)
     evidence_url: str | None = Field(default=None, max_length=1024)
 
     is_anonymous: bool = True

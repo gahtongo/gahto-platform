@@ -9,16 +9,16 @@ class Settings(BaseSettings):
 
     API_V1_PREFIX: str = "/api/v1"
 
-    SECRET_KEY: str = "change-me-in-production"
+    SECRET_KEY: str = "development-only-change-me"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24
 
-    DATABASE_URL: str = "postgresql://gahtosuperadmin:VIC3zzjj2HXpsJ6taSiilTUSWxQc7kJi@dpg-d7drhku7r5hc73a373n0-a/gahto"
+    DATABASE_URL: str = "sqlite:///./gahto.db"
 
     BACKEND_CORS_ORIGINS: str = ""
 
-    FIRST_SUPERADMIN_EMAIL: str = "admin@gahto.org"
-    FIRST_SUPERADMIN_PASSWORD: str = "@Admingahto1"
+    FIRST_SUPERADMIN_EMAIL: str = ""
+    FIRST_SUPERADMIN_PASSWORD: str = ""
 
     MEDIA_UPLOAD_DIR: str = "uploads"
     MAX_UPLOAD_SIZE_MB: int = 20
@@ -46,7 +46,9 @@ class Settings(BaseSettings):
     WHATSAPP_SENDER_ID: str = ""
 
     RESEND_API_KEY: str = ""
+    EMAIL_FROM: str = ""
     ADMIN_NOTIFICATION_EMAILS: str = "admin@gahto.org"
+    CONTACT_NOTIFICATION_RECIPIENTS: str = ""
 
     model_config = SettingsConfigDict(
         env_file=".env",

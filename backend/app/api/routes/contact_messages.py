@@ -14,6 +14,7 @@ from app.services.contact_message_service import (
     create_contact_message,
     update_contact_message_status,
 )
+from app.services.email_service import EmailDeliveryError
 
 router = APIRouter(prefix="/contact-messages", tags=["Contact Messages"])
 
@@ -27,7 +28,13 @@ def submit_contact_message(
     payload: ContactMessageCreate,
     db: Session = Depends(get_db),
 ):
-    return create_contact_message(db, payload)
+    try:
+        return create_contact_message(db, payload)
+    except EmailDeliveryError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Your message was saved, but notification delivery failed. Please use a direct contact channel if urgent.",
+        ) from exc
 
 
 @router.get("/admin", response_model=list[ContactMessageResponse])

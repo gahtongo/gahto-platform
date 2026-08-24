@@ -1,4 +1,6 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
+from app.api.routes.auth import get_current_admin
+from app.models.admin_user import AdminUser
 from app.services.ai_triage_service import extract_report_from_chat
 
 from app.schemas.ai import (
@@ -29,7 +31,11 @@ def chat_with_ai(payload: AIChatRequest):
 
 
 @router.post("/optimize-content", response_model=AIContentOptimizeResponse)
-def optimize_content_with_ai(payload: AIContentOptimizeRequest):
+def optimize_content_with_ai(
+    payload: AIContentOptimizeRequest,
+    current_admin: AdminUser = Depends(get_current_admin),
+):
+    _ = current_admin
     try:
         return optimize_content(payload)
     except ValueError as exc:

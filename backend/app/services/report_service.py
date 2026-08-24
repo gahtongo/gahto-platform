@@ -1,4 +1,5 @@
 import re
+import logging
 from sqlalchemy.orm import Session
 from geopy.geocoders import Nominatim
 
@@ -13,6 +14,7 @@ from app.schemas.ai import AIChatMessage
 
 
 VALID_REPORT_STATUSES = {"new", "in_review", "resolved", "archived"}
+logger = logging.getLogger(__name__)
 VALID_ESCALATION_STATUSES = {"pending", "under_review", "escalated", "closed"}
 VALID_URGENCY_LEVELS = {"low", "medium", "urgent"}
 
@@ -93,7 +95,7 @@ def create_report(db: Session, payload: ReportCreate) -> Report:
     try:
         send_admin_report_notification(report)
     except Exception:
-        pass
+        logger.exception("Report notification failed report_id=%s", report.id)
 
     # --- AI triage automation ---
     try:
@@ -105,9 +107,8 @@ def create_report(db: Session, payload: ReportCreate) -> Report:
         report.ai_summary = ai_response.reply
         db.commit()
         db.refresh(report)
-    except Exception as e:
-        # Log or ignore AI errors, but don't block report creation
-        pass
+    except Exception:
+        logger.exception("Automated report triage failed report_id=%s", report.id)
 
     preview = report.description.strip()
     if len(preview) > 140:

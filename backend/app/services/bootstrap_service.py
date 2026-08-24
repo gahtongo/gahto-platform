@@ -8,6 +8,9 @@ settings = get_settings()
 
 
 def create_first_superadmin(db: Session) -> None:
+    if not settings.FIRST_SUPERADMIN_EMAIL.strip() or not settings.FIRST_SUPERADMIN_PASSWORD:
+        return
+
     existing_admin = (
         db.query(AdminUser)
         .filter(AdminUser.email == settings.FIRST_SUPERADMIN_EMAIL)

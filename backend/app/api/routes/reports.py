@@ -13,6 +13,7 @@ from app.schemas.report import ReportCreate, ReportResponse, ReportUpdateAdmin
 from app.services.report_service import create_report, list_reports, update_report_admin
 
 router = APIRouter(prefix="/reports", tags=["Reports"])
+ALLOWED_EVIDENCE_TYPES = {"image/jpeg", "image/png", "image/webp", "video/mp4", "video/webm"}
 
 
 @router.post(
@@ -48,10 +49,20 @@ async def submit_report_with_evidence(
 ):
     evidence_url = None
     if evidence_file is not None:
+        if evidence_file.content_type not in ALLOWED_EVIDENCE_TYPES:
+            raise HTTPException(status_code=415, detail="Unsupported evidence file type")
         filename = f"{uuid4().hex}_{Path(evidence_file.filename).name}"
         upload_path = Path(settings.MEDIA_UPLOAD_DIR) / filename
+        max_bytes = settings.MAX_UPLOAD_SIZE_MB * 1024 * 1024
+        bytes_written = 0
         with upload_path.open("wb") as buffer:
-            buffer.write(await evidence_file.read())
+            while chunk := await evidence_file.read(1024 * 1024):
+                bytes_written += len(chunk)
+                if bytes_written > max_bytes:
+                    buffer.close()
+                    upload_path.unlink(missing_ok=True)
+                    raise HTTPException(status_code=413, detail="Evidence file is too large")
+                buffer.write(chunk)
         evidence_url = f"/uploads/{filename}"
 
     payload = ReportCreate(

@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import IntroVideoModal from "../components/IntroVideoModal";
@@ -41,29 +40,24 @@ export default function AboutPage() {
 
   const teamMembers = [
     {
-      name: "Jummai Madaki",
+      name: "J. Maidaki",
       role: "Advocate",
-      img: "/team/jummai.jpg",
     },
     {
-      name: "Bukky Alabi",
+      name: "B. Alabi",
       role: "Counselor",
-      img: "/team/bukky.jpg",
     },
     {
-      name: "Peter Adeniran",
+      name: "P. Adeniran",
       role: "Secretary",
-      img: "/team/peter.jpg",
     },
     {
-      name: "Esther Robert",
+      name: "E. Robert",
       role: "Administrator",
-      img: "/team/esther.jpg",
     },
     {
-      name: "John Olatimehin",
+      name: "J. Olatimehin",
       role: "Project Manager",
-      img: "/team/john.jpg",
     },
   ];
 
@@ -214,7 +208,7 @@ export default function AboutPage() {
             <div className="mt-8 inline-flex items-center gap-3 rounded-2xl bg-white px-4 py-3 shadow-sm border border-slate-200">
               <div className="h-2.5 w-2.5 rounded-full bg-red-500" />
               <p className="font-semibold text-black">
-                Prosper Kayode Micheal
+                P. K. Michael
               </p>
             </div>
           </div>
@@ -230,17 +224,11 @@ export default function AboutPage() {
 
           <div className="grid md:grid-cols-2 gap-6 sm:gap-8">
             <div className="group rounded-3xl bg-white border border-slate-200 p-6 sm:p-8 text-center shadow-sm hover:shadow-xl transition duration-300">
-              <div className="relative w-36 h-36 sm:w-40 sm:h-40 mx-auto rounded-full overflow-hidden shadow-lg ring-4 ring-red-50">
-                <Image
-                  src="/team/prosper.jpg"
-                  alt="Prosper Kayode Micheal"
-                  fill
-                  sizes="160px"
-                  className="object-cover group-hover:scale-105 transition duration-300"
-                />
+              <div aria-hidden="true" className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-red-50 text-2xl font-extrabold text-red-700 ring-4 ring-red-100">
+                PKM
               </div>
               <h3 className="mt-5 font-bold text-xl text-gray-900">
-                Prosper Kayode Micheal
+                P. K. Michael
               </h3>
               <p className="text-gray-500 text-sm sm:text-base mt-1">
                 Founder / President
@@ -248,17 +236,11 @@ export default function AboutPage() {
             </div>
 
             <div className="group rounded-3xl bg-white border border-slate-200 p-6 sm:p-8 text-center shadow-sm hover:shadow-xl transition duration-300">
-              <div className="relative w-36 h-36 sm:w-40 sm:h-40 mx-auto rounded-full overflow-hidden shadow-lg ring-4 ring-blue-50">
-                <Image
-                  src="/team/tosin.jpg"
-                  alt="Tosin Adeniran"
-                  fill
-                  sizes="160px"
-                  className="object-cover group-hover:scale-105 transition duration-300"
-                />
+              <div aria-hidden="true" className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-blue-50 text-2xl font-extrabold text-blue-900 ring-4 ring-blue-100">
+                TA
               </div>
               <h3 className="mt-5 font-bold text-xl text-gray-900">
-                Tosin Adeniran
+                T. Adeniran
               </h3>
               <p className="text-gray-500 text-sm sm:text-base mt-1">
                 National Coordinator
@@ -281,14 +263,8 @@ export default function AboutPage() {
                 key={i}
                 className="group rounded-3xl border border-slate-200 bg-white p-5 text-center shadow-sm hover:shadow-xl hover:-translate-y-1 transition duration-300"
               >
-                <div className="relative w-28 h-28 sm:w-32 sm:h-32 mx-auto rounded-full overflow-hidden shadow-md ring-4 ring-slate-50">
-                  <Image
-                    src={member.img}
-                    alt={member.name}
-                    fill
-                    sizes="128px"
-                    className="object-cover group-hover:scale-105 transition duration-300"
-                  />
+                <div aria-hidden="true" className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-slate-100 text-xl font-bold text-blue-950 ring-4 ring-slate-50">
+                  {member.name.split(" ").map((part) => part[0]).join("")}
                 </div>
 
                 <h3 className="mt-4 font-semibold text-gray-900">

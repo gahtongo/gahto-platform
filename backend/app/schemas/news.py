@@ -1,6 +1,7 @@
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
+from app.services.content_service import normalize_news_content
 
 
 class NewsPostBase(BaseModel):
@@ -57,6 +58,11 @@ class NewsPostResponse(BaseModel):
     created_by_admin_id: int | None = None
     created_at: datetime
     updated_at: datetime
+
+    @field_validator("content")
+    @classmethod
+    def normalize_legacy_content(cls, value: str) -> str:
+        return normalize_news_content(value)
 
     class Config:
         from_attributes = True

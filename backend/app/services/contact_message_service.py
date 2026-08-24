@@ -4,6 +4,7 @@ from app.models.contact_message import ContactMessage
 from app.schemas.contact_message import ContactMessageCreate
 from app.schemas.notification import NotificationCreate
 from app.services.notification_service import create_notification
+from app.services.email_service import send_contact_notification
 
 
 VALID_MESSAGE_STATUSES = {"new", "read", "replied", "archived"}
@@ -35,6 +36,8 @@ def create_contact_message(db: Session, payload: ContactMessageCreate) -> Contac
             is_read=False,
         ),
     )
+
+    send_contact_notification(message)
 
     return message
 
