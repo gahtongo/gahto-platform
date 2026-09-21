@@ -119,7 +119,7 @@ export default function CardRender() {
 
   const proxyUrl = (url: string | null) => {
     const absoluteUrl = absoluteAssetUrl(url);
-    return absoluteUrl ? `/api/proxy-image?url=${encodeURIComponent(absoluteUrl)}` : "";
+    return absoluteUrl ? `/card-image?url=${encodeURIComponent(absoluteUrl)}` : "";
   };
 
   const exportAssetUrl = (url: string | null) => {
