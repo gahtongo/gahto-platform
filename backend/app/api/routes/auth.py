@@ -1,3 +1,4 @@
+import pyotp
 import secrets
 from datetime import datetime, timedelta
 
@@ -23,6 +24,7 @@ from app.schemas.auth import (
     ResetPasswordRequest,
     MessageResponse,
 )
+from app.core.permissions import AdminRole, has_role_or_above
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -44,6 +46,41 @@ def login_admin(payload: AdminLoginRequest, db: Session = Depends(get_db)):
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Admin account is inactive",
         )
+
+    # 2FA Logic
+    if not admin.totp_secret:
+        # Require them to pass a flag that they are ready to setup
+        if not payload.totp_code:
+            # We haven't generated a secret yet, and they haven't submitted a code.
+            # Generate temporary secret, send URI, wait for them to scan and submit code to confirm
+            temp_secret = pyotp.random_base32()
+            totp_uri = pyotp.totp.TOTP(temp_secret).provisioning_uri(
+                name=admin.email, issuer_name="GAHTO Admin"
+            )
+            return TokenResponse(requires_2fa_setup=True, totp_uri=totp_uri, temp_secret=temp_secret)
+        else:
+            # They submitted a setup code. We MUST verify it against the temp secret they were given
+            if not payload.temp_secret:
+                raise HTTPException(status_code=400, detail="Missing temporary secret for setup.")
+
+            totp = pyotp.TOTP(payload.temp_secret)
+            if not totp.verify(payload.totp_code):
+                raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid initial setup code. Try scanning again.")
+
+            # Setup successful! Now we save it permanently.
+            admin.totp_secret = payload.temp_secret
+            db.commit()
+    else:
+        # Standard login for already setup accounts
+        if not payload.totp_code:
+            return TokenResponse(requires_2fa=True)
+
+        totp = pyotp.TOTP(admin.totp_secret)
+        if not totp.verify(payload.totp_code):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid authentication code",
+            )
 
     token = create_access_token(subject=admin.id)
     return TokenResponse(access_token=token)
@@ -85,6 +122,30 @@ def get_current_admin(
     return admin
 
 
+def require_content_admin(
+    current_admin: AdminUser = Depends(get_current_admin),
+) -> AdminUser:
+    if not has_role_or_above(current_admin.role, AdminRole.CONTENT_ADMIN):
+        raise HTTPException(status_code=403, detail="Insufficient permissions")
+    return current_admin
+
+
+def require_operations_admin(
+    current_admin: AdminUser = Depends(get_current_admin),
+) -> AdminUser:
+    if not has_role_or_above(current_admin.role, AdminRole.OPERATIONS_ADMIN):
+        raise HTTPException(status_code=403, detail="Operations Admin access required")
+    return current_admin
+
+
+def require_super_admin(
+    current_admin: AdminUser = Depends(get_current_admin),
+) -> AdminUser:
+    if current_admin.role != AdminRole.SUPER_ADMIN.value or not current_admin.is_superuser:
+        raise HTTPException(status_code=403, detail="Super Admin access required")
+    return current_admin
+
+
 @router.get("/me", response_model=AdminUserResponse)
 def get_logged_in_admin(current_admin: AdminUser = Depends(get_current_admin)):
     return current_admin
@@ -106,17 +167,7 @@ def forgot_password(payload: ForgotPasswordRequest, db: Session = Depends(get_db
     admin.reset_token_expires_at = expires_at
     db.commit()
 
-    reset_link = f"{settings.FRONTEND_URL}/admin/reset-password?token={token}"
-
-    print("\n" + "=" * 80)
-    print("GAHTO ADMIN PASSWORD RESET LINK")
-    print(reset_link)
-    print("=" * 80 + "\n")
-
-    return ForgotPasswordResponse(
-        message=generic_message,
-        reset_link=reset_link,
-    )
+    return ForgotPasswordResponse(message=generic_message)
 
 
 @router.post("/reset-password", response_model=MessageResponse)

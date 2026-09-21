@@ -19,6 +19,8 @@ class AdminUser(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     is_superuser: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
+    totp_secret: Mapped[str | None] = mapped_column(String(255), nullable=True)
+
     reset_token: Mapped[str | None] = mapped_column(String(255), nullable=True)
     reset_token_expires_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 

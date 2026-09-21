@@ -12,7 +12,7 @@ export default function AdminLayout({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const [checkingAuth, setCheckingAuth] = useState(true);
+  const [validatedPath, setValidatedPath] = useState<string | null>(null);
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 
   const isPublicAdminRoute = useMemo(() => {
@@ -24,7 +24,6 @@ export default function AdminLayout({
 
   useEffect(() => {
     if (isPublicAdminRoute) {
-      setCheckingAuth(false);
       return;
     }
 
@@ -35,14 +34,29 @@ export default function AdminLayout({
       return;
     }
 
-    setCheckingAuth(false);
+    const validateSession = async () => {
+      try {
+        const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000";
+        const response = await fetch(`${apiBase}/api/v1/auth/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+          cache: "no-store",
+        });
+        if (!response.ok) throw new Error("Invalid session");
+        setValidatedPath(pathname);
+      } catch {
+        localStorage.removeItem("gahto_admin_token");
+        router.replace(`/admin/login?next=${encodeURIComponent(pathname)}`);
+      }
+    };
+
+    validateSession();
   }, [isPublicAdminRoute, pathname, router]);
 
   if (isPublicAdminRoute) {
     return <>{children}</>;
   }
 
-  if (checkingAuth) {
+  if (validatedPath !== pathname) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-50">
         <div className="rounded-2xl border border-slate-200 bg-white px-6 py-5 text-slate-600 shadow-sm">

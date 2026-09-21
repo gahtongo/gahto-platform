@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
-from app.api.routes.auth import get_current_admin
+from app.api.routes.auth import require_operations_admin
 from app.db.session import get_db
 from app.models.admin_user import AdminUser
 from app.models.contact_message import ContactMessage
@@ -40,7 +40,7 @@ def submit_contact_message(
 @router.get("/admin", response_model=list[ContactMessageResponse])
 def get_contact_messages_admin(
     db: Session = Depends(get_db),
-    current_admin: AdminUser = Depends(get_current_admin),
+    current_admin: AdminUser = Depends(require_operations_admin),
     status_filter: str | None = Query(default=None),
 ):
     _ = current_admin
@@ -58,7 +58,7 @@ def update_contact_message_admin(
     message_id: int,
     payload: ContactMessageUpdateStatus,
     db: Session = Depends(get_db),
-    current_admin: AdminUser = Depends(get_current_admin),
+    current_admin: AdminUser = Depends(require_operations_admin),
 ):
     _ = current_admin
 

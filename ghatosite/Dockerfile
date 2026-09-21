@@ -15,6 +15,12 @@ COPY . .
 RUN if [ -f .env.production ]; then mv .env.production .env.local; fi
 
 # Build the application
+# We accept build arguments to bake public env vars into the build
+ARG NEXT_PUBLIC_API_BASE_URL
+ARG NEXT_PUBLIC_FRONTEND_URL
+ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL
+ENV NEXT_PUBLIC_FRONTEND_URL=$NEXT_PUBLIC_FRONTEND_URL
+
 RUN npm run build
 
 # Production stage

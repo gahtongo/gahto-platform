@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
-from app.api.routes.auth import get_current_admin
+from app.api.routes.auth import require_content_admin
 from app.db.session import get_db
 from app.models.admin_user import AdminUser
 from app.models.campaign import Campaign
@@ -40,7 +40,7 @@ def get_public_campaign_detail(slug: str, db: Session = Depends(get_db)):
 @router.get("/admin/all", response_model=list[CampaignResponse])
 def get_all_campaigns_admin(
     db: Session = Depends(get_db),
-    current_admin: AdminUser = Depends(get_current_admin),
+    current_admin: AdminUser = Depends(require_content_admin),
 ):
     return (
         db.query(Campaign)
@@ -53,7 +53,7 @@ def get_all_campaigns_admin(
 def create_campaign_admin(
     payload: CampaignCreate,
     db: Session = Depends(get_db),
-    current_admin: AdminUser = Depends(get_current_admin),
+    current_admin: AdminUser = Depends(require_content_admin),
 ):
     return create_campaign(db, payload)
 
@@ -63,7 +63,7 @@ def update_campaign_admin(
     campaign_id: int,
     payload: CampaignUpdate,
     db: Session = Depends(get_db),
-    current_admin: AdminUser = Depends(get_current_admin),
+    current_admin: AdminUser = Depends(require_content_admin),
 ):
     campaign = db.query(Campaign).filter(Campaign.id == campaign_id).first()
     if not campaign:
@@ -76,7 +76,7 @@ def update_campaign_admin(
 def delete_campaign_admin(
     campaign_id: int,
     db: Session = Depends(get_db),
-    current_admin: AdminUser = Depends(get_current_admin),
+    current_admin: AdminUser = Depends(require_content_admin),
 ):
     campaign = db.query(Campaign).filter(Campaign.id == campaign_id).first()
     if not campaign:

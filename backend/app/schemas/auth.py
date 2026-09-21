@@ -4,11 +4,17 @@ from pydantic import BaseModel, EmailStr, Field
 class AdminLoginRequest(BaseModel):
     email: EmailStr
     password: str
+    totp_code: str | None = None
+    temp_secret: str | None = None
 
 
 class TokenResponse(BaseModel):
-    access_token: str
+    access_token: str | None = None
     token_type: str = "bearer"
+    requires_2fa_setup: bool = False
+    totp_uri: str | None = None
+    temp_secret: str | None = None
+    requires_2fa: bool = False
 
 
 class AdminUserResponse(BaseModel):
@@ -29,7 +35,6 @@ class ForgotPasswordRequest(BaseModel):
 
 class ForgotPasswordResponse(BaseModel):
     message: str
-    reset_link: str | None = None
 
 
 class ResetPasswordRequest(BaseModel):

@@ -14,6 +14,7 @@ from app.api.routes.notifications import router as notifications_router
 from app.api.routes.reports import router as reports_router
 from app.api.routes.search import router as search_router
 from app.api.routes.settings import router as settings_router
+from app.api.routes.staff import router as staff_router
 from app.core.config import get_settings
 from app.db.base import Base
 from app.db.session import SessionLocal, engine
@@ -25,12 +26,22 @@ from app.models.news_post import NewsPost  # noqa: F401
 from app.models.notification_log import NotificationLog  # noqa: F401
 from app.models.report import Report  # noqa: F401
 from app.models.site_setting import SiteSetting  # noqa: F401
+from app.models.staff_member import StaffMember  # noqa: F401
+from app.models.staff_card import StaffCard  # noqa: F401
 from app.services.bootstrap_service import create_first_superadmin
 from app.services.settings_service import seed_default_site_settings
 from app.api.routes import donations
 
 
 settings = get_settings()
+
+if settings.is_production:
+    if settings.SECRET_KEY == "development-only-change-me" or len(settings.SECRET_KEY) < 32:
+        raise RuntimeError("Production requires a strong SECRET_KEY")
+    if settings.DATABASE_URL.startswith("sqlite"):
+        raise RuntimeError("Production DATABASE_URL must use the production database")
+    if not settings.cors_origins_list:
+        raise RuntimeError("Production BACKEND_CORS_ORIGINS must be configured")
 
 
 upload_dir = Path(settings.MEDIA_UPLOAD_DIR)
@@ -60,6 +71,7 @@ app.include_router(notifications_router, prefix=settings.API_V1_PREFIX)
 app.include_router(search_router, prefix=settings.API_V1_PREFIX)
 app.include_router(reports_router, prefix=settings.API_V1_PREFIX)
 app.include_router(ai_router, prefix=settings.API_V1_PREFIX)
+app.include_router(staff_router, prefix=settings.API_V1_PREFIX)
 app.include_router(donations.router, prefix="/api/v1")
 
 

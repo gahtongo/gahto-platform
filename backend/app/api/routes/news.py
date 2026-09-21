@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
-from app.api.routes.auth import get_current_admin
+from app.api.routes.auth import require_content_admin
 from app.db.session import get_db
 from app.models.admin_user import AdminUser
 from app.models.news_post import NewsPost
@@ -60,7 +60,7 @@ def get_public_news_detail(slug: str, db: Session = Depends(get_db)):
 @router.get("/admin/all", response_model=list[NewsPostResponse])
 def get_all_news_admin(
     db: Session = Depends(get_db),
-    current_admin: AdminUser = Depends(get_current_admin),
+    current_admin: AdminUser = Depends(require_content_admin),
 ):
     return db.query(NewsPost).order_by(NewsPost.created_at.desc()).all()
 
@@ -69,7 +69,7 @@ def get_all_news_admin(
 def create_news_admin(
     payload: NewsPostCreate,
     db: Session = Depends(get_db),
-    current_admin: AdminUser = Depends(get_current_admin),
+    current_admin: AdminUser = Depends(require_content_admin),
 ):
     return create_news_post(db, payload, admin_id=current_admin.id)
 
@@ -79,7 +79,7 @@ def update_news_admin(
     news_id: int,
     payload: NewsPostUpdate,
     db: Session = Depends(get_db),
-    current_admin: AdminUser = Depends(get_current_admin),
+    current_admin: AdminUser = Depends(require_content_admin),
 ):
     news_post = db.query(NewsPost).filter(NewsPost.id == news_id).first()
     if not news_post:
@@ -92,7 +92,7 @@ def update_news_admin(
 def delete_news_admin(
     news_id: int,
     db: Session = Depends(get_db),
-    current_admin: AdminUser = Depends(get_current_admin),
+    current_admin: AdminUser = Depends(require_content_admin),
 ):
     news_post = db.query(NewsPost).filter(NewsPost.id == news_id).first()
     if not news_post:
@@ -106,7 +106,7 @@ def delete_news_admin(
 @router.post("/admin/ai-extract", response_model=AIExtractedNews)
 def ai_extract_news(
     payload: dict,
-    current_admin: AdminUser = Depends(get_current_admin),
+    current_admin: AdminUser = Depends(require_content_admin),
 ):
     raw_content = payload.get("content")
     if not raw_content:

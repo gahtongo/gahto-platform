@@ -49,7 +49,9 @@ async def submit_report_with_evidence(
 ):
     evidence_url = None
     if evidence_file is not None:
-        if evidence_file.content_type not in ALLOWED_EVIDENCE_TYPES:
+        # Browsers often append codec info to WebM, e.g., "video/webm; codecs=vp8,opus"
+        base_content_type = evidence_file.content_type.split(";")[0].strip()
+        if base_content_type not in ALLOWED_EVIDENCE_TYPES:
             raise HTTPException(status_code=415, detail="Unsupported evidence file type")
         filename = f"{uuid4().hex}_{Path(evidence_file.filename).name}"
         upload_path = Path(settings.MEDIA_UPLOAD_DIR) / filename

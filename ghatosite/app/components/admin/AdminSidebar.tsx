@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import {
   LayoutDashboard,
   Newspaper,
@@ -11,6 +12,7 @@ import {
   Mail,
   LogOut,
   ShieldCheck,
+  Users
 } from "lucide-react";
 
 export default function AdminSidebar({
@@ -22,8 +24,22 @@ export default function AdminSidebar({
 }) {
   const pathname = usePathname();
   const router = useRouter();
+  const [role, setRole] = useState<string>("super_admin");
 
-  const items = [
+  useEffect(() => {
+    const token = localStorage.getItem("gahto_admin_token");
+    if (!token) return;
+    fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8700"}/api/v1/admin/me`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data && data.role) setRole(data.role);
+    })
+    .catch(console.error);
+  }, []);
+
+  let items = [
     {
       label: "Dashboard",
       href: "/admin",
@@ -38,6 +54,11 @@ export default function AdminSidebar({
       label: "Campaigns",
       href: "/admin/campaigns",
       icon: Megaphone,
+    },
+    {
+      label: "Staff",
+      href: "/admin/staff",
+      icon: Users,
     },
     {
       label: "Settings",
@@ -55,6 +76,10 @@ export default function AdminSidebar({
       icon: Mail,
     },
   ];
+
+  if (role !== "super_admin") {
+    items = items.filter(item => item.label !== "Settings");
+  }
 
   const handleLogout = () => {
     localStorage.removeItem("gahto_admin_token");

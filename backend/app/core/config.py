@@ -3,6 +3,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    ENVIRONMENT: str = "development"
     APP_NAME: str = "GAHTO Backend"
     APP_VERSION: str = "1.0.0"
     DEBUG: bool = False
@@ -66,6 +67,10 @@ class Settings(BaseSettings):
             for origin in self.BACKEND_CORS_ORIGINS.split(",")
             if origin.strip()
         ]
+
+    @property
+    def is_production(self) -> bool:
+        return self.ENVIRONMENT.strip().lower() == "production"
 
 
 @lru_cache

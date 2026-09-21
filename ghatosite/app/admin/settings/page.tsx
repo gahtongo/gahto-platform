@@ -28,6 +28,7 @@ type Setting = {
 type SettingsMap = Record<string, Setting>;
 
 const orderedKeys = [
+  "founder_signature",
   "whatsapp_number",
   "emergency_phone",
   "nigeria_office_phone",
@@ -47,10 +48,19 @@ const keyMeta: Record<
     label: string;
     helper: string;
     icon: React.ComponentType<{ className?: string }>;
-    group: "Emergency & Support" | "Office Lines" | "Social Channels";
+    group: "Emergency & Support" | "Office Lines" | "Social Channels" | "System Config";
     placeholder: string;
+    type?: "text" | "file";
   }
 > = {
+  founder_signature: {
+    label: "Founder Signature",
+    helper: "Upload the signature image for the back of the GAHTO ID Cards.",
+    icon: Settings2,
+    group: "System Config",
+    placeholder: "Upload PNG/JPG",
+    type: "file",
+  },
   whatsapp_number: {
     label: "WhatsApp Number",
     helper: "Primary WhatsApp support line used on the public site.",
@@ -135,6 +145,7 @@ export default function AdminSettingsPage() {
     process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000";
 
   const authFetch = useAuthApi();
+  const assetUrl = (value: string) => value.startsWith("/") ? `${API_BASE}${value}` : value;
 
   const [settings, setSettings] = useState<SettingsMap>({});
   const [loading, setLoading] = useState(true);
@@ -189,6 +200,39 @@ export default function AdminSettingsPage() {
     }));
   };
 
+  const uploadFileSetting = async (key: string, file: File) => {
+    try {
+      setSavingKey(key);
+      setStatusText("");
+      setErrorText("");
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await authFetch(`${API_BASE}/api/v1/settings/admin/upload?key=${key}`, {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setErrorText(data.detail || "Failed to upload setting file.");
+        return;
+      }
+
+      setSettings((prev) => ({
+        ...prev,
+        [key]: data,
+      }));
+      setStatusText(`${keyMeta[key]?.label || key} uploaded successfully.`);
+    } catch {
+      setErrorText("Unable to upload setting right now.");
+    } finally {
+      setSavingKey(null);
+    }
+  };
+
   const saveSetting = async (key: string) => {
     const setting = settings[key];
     if (!setting) return;
@@ -229,6 +273,7 @@ export default function AdminSettingsPage() {
 
   const groupedSections = useMemo(() => {
     const sections: Record<string, string[]> = {
+      "System Config": [],
       "Emergency & Support": [],
       "Office Lines": [],
       "Social Channels": [],
@@ -392,12 +437,28 @@ export default function AdminSettingsPage() {
                       </div>
 
                       <div className="flex min-w-0 flex-1 flex-col gap-3 lg:max-w-2xl">
-                        <input
-                          value={setting?.value || ""}
-                          onChange={(e) => updateValue(key, e.target.value)}
-                          placeholder={meta.placeholder}
-                          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-blue-900 focus:ring-2 focus:ring-blue-900/15"
-                        />
+                        {meta.type === "file" ? (
+                           <div className="flex flex-col gap-2">
+                              {setting?.value && (
+                                <img src={assetUrl(setting.value)} alt="preview" className="h-16 w-auto object-contain border rounded-md p-1 bg-white mb-2" />
+                              )}
+                              <input
+                                type="file"
+                                accept="image/png, image/jpeg, image/webp"
+                                onChange={(e) => {
+                                  if (e.target.files?.[0]) uploadFileSetting(key, e.target.files[0]);
+                                }}
+                                className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                              />
+                           </div>
+                        ) : (
+                          <input
+                            value={setting?.value || ""}
+                            onChange={(e) => updateValue(key, e.target.value)}
+                            placeholder={meta.placeholder}
+                            className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-blue-900 focus:ring-2 focus:ring-blue-900/15"
+                          />
+                        )}
 
                         <div className="flex flex-wrap items-center gap-3">
                           <span
