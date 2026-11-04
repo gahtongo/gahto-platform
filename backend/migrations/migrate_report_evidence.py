@@ -36,16 +36,19 @@ def main() -> None:
     with SessionLocal() as db:
         reports = db.query(Report).filter(Report.evidence_url.like("/uploads/%")).order_by(Report.id).all()
         entries = []
+        missing_ids = []
         for report in reports:
             name = report.evidence_url.removeprefix("/uploads/")
             if not name or Path(name).name != name:
                 raise RuntimeError(f"Unsafe evidence path on report {report.id}")
             source = public_dir / name
             if not source.is_file():
-                raise RuntimeError(f"Missing evidence on report {report.id}: {name}")
+                missing_ids.append(report.id)
+                continue
             entries.append((report, name, source, private_dir / name))
 
-        print(f"Legacy report evidence files: {len(entries)}")
+        print(f"Legacy report evidence files present: {len(entries)}")
+        print(f"Missing legacy evidence (records preserved): {len(missing_ids)}; report IDs: {missing_ids}")
         if not args.apply or not entries:
             return
 

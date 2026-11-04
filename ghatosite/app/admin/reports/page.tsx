@@ -44,7 +44,7 @@ type ReportItem = {
 
 type ReportStatus = "new" | "in_review" | "resolved" | "archived";
 
-function EvidenceViewer({ reportId }: { reportId: number }) {
+function EvidenceViewer({ reportId, legacyMissing }: { reportId: number; legacyMissing: boolean }) {
   const authFetch = useAuthApi();
   const [preview, setPreview] = useState<{ url: string; type: string } | null>(null);
   const [error, setError] = useState("");
@@ -67,6 +67,8 @@ function EvidenceViewer({ reportId }: { reportId: number }) {
       setLoading(false);
     }
   };
+
+  if (legacyMissing) return <p className="mt-3 text-sm font-medium text-amber-800">Legacy evidence file unavailable. The report record is preserved; check historical records before marking the case complete.</p>;
 
   return <div className="mt-3 text-sm text-slate-700">
     {!preview && <button type="button" onClick={openEvidence} disabled={loading} className="rounded-xl bg-blue-900 px-4 py-2 font-semibold text-white disabled:opacity-60">{loading ? "Loading evidence..." : "View evidence securely"}</button>}
@@ -609,7 +611,7 @@ export default function AdminReportsPage() {
                               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
                                 Evidence upload
                               </p>
-                              <EvidenceViewer reportId={report.id} />
+                              <EvidenceViewer reportId={report.id} legacyMissing={report.evidence_url.startsWith("/uploads/")} />
                             </div>
                           ) : null}
                         </div>

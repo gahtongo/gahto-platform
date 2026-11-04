@@ -14,6 +14,8 @@ Report evidence must not remain under the public `/uploads` route. The backend n
 
 Before replacing the live GAHTO backend, back up its database and `backend/uploads`, build the new images, and run the legacy migration's read-only inventory with `python -m migrations.migrate_report_evidence` in the new backend image. Stop **only** the GAHTO backend before running `python -m migrations.migrate_report_evidence --apply` in a one-off container using the production Compose files. The script copies and checksum-verifies the referenced files, changes only report evidence references, and removes only their public originals. It leaves a private manifest for audit. Start the new backend, verify its health and protected evidence access, then replace the GAHTO frontend. Do not stop the shared Nginx service or any other project's containers. If the migration errors, do not start the new frontend; inspect the manifest and backup before retrying.
 
+Missing legacy attachments are not invented or deleted: the migration reports their case IDs and leaves those database references unchanged. The admin page labels those attachments unavailable. Recover them from another verified source if one later becomes available.
+
 ## Getting Started
 
 First, run the development server:
