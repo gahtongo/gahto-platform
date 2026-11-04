@@ -59,6 +59,24 @@ export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [logoModalOpen, setLogoModalOpen] = useState(false);
   const [showIntro, setShowIntro] = useState(false);
+  const [seasonalSettings, setSeasonalSettings] = useState<Record<string, string>>({});
+  const [today, setToday] = useState("");
+
+  useEffect(() => {
+    const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000";
+    fetch(`${apiBase}/api/v1/settings/public`)
+      .then((response) => response.ok ? response.json() : [])
+      .then((data: { key: string; value: string }[]) => {
+        if (Array.isArray(data)) setSeasonalSettings(Object.fromEntries(data.filter((item) => item.key.startsWith("seasonal_")).map((item) => [item.key, item.value])));
+      })
+      .catch(() => {});
+    const refreshDate = () => setToday(new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Lagos", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date()));
+    refreshDate();
+    const timer = setInterval(refreshDate, 60_000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const showChristmas = seasonalSettings.seasonal_theme === "christmas" && Boolean(today && seasonalSettings.seasonal_start && seasonalSettings.seasonal_end) && today >= seasonalSettings.seasonal_start && today <= seasonalSettings.seasonal_end;
 
   const navItems = [
     { name: "Home", href: "/" },
@@ -99,13 +117,13 @@ export default function Navbar() {
   return (
     <>
       <header className="sticky top-0 z-[80] border-b border-gray-200 bg-white/92 backdrop-blur-xl shadow-sm animate-navbar-entry">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-y-3 px-4 py-3 sm:px-6">
 
           <button
             onClick={() => setLogoModalOpen(true)}
-            className="group flex flex-col sm:flex-row min-w-0 items-start sm:items-center gap-1 sm:gap-3 text-left shrink-0"
+            className="group flex min-w-0 shrink-0 items-center gap-2 text-left sm:gap-3"
           >
-            <div className="relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-md ring-1 ring-black/5 transition group-hover:shadow-red-500/20 sm:h-20 sm:w-20">
+            <div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white shadow-md ring-1 ring-black/5 transition group-hover:shadow-red-500/20 sm:h-16 sm:w-16">
               <Image
                 src="/logo.png"
                 alt="GAHTO Logo"
@@ -114,16 +132,17 @@ export default function Navbar() {
                 className="object-cover transition-transform duration-300 group-hover:scale-105"
                 priority
               />
+              {showChristmas && <Image src="/images/seasonal/christmas-cap.svg" alt="" aria-hidden="true" width={32} height={32} className="pointer-events-none absolute -right-2 -top-2 z-10 h-7 w-7 rotate-12 sm:h-9 sm:w-9" />}
             </div>
 
             <div className="min-w-0 leading-tight text-left">
               <p
-                className="text-xl font-extrabold tracking-tight text-blue-800 transition hover:text-red-600 sm:text-[2rem]"
+                className="text-xl font-extrabold tracking-tight text-blue-800 transition hover:text-red-600 sm:text-2xl"
               >
                 GAHTO
               </p>
 
-              <p className="block text-[11px] leading-tight tracking-wide text-slate-500 sm:text-[15px] sm:font-medium whitespace-normal break-words max-w-[180px] sm:max-w-[220px] md:max-w-[240px] lg:max-w-[260px] text-left">
+              <p className="block max-w-[150px] text-[10px] leading-tight text-slate-500 sm:max-w-[220px] sm:text-[12px] sm:font-medium">
                 <span className="sm:hidden">Global Anti Human Trafficking Org.</span>
                 <span className="hidden sm:inline">
                   Global Anti Human<br />Trafficking Organization
@@ -132,12 +151,14 @@ export default function Navbar() {
             </div>
           </button>
 
-          <div className="mx-2 md:hidden">
+          <div className="order-3 flex w-full items-center justify-between gap-2 border-t border-slate-100 pt-2 md:order-none md:w-auto md:flex-col md:items-center md:border-0 md:pt-0">
             <LiveClock />
+            <span className="text-right text-[9px] font-extrabold tracking-[0.04em] text-blue-900 sm:text-[10px] md:text-center">
+              RESCUE · PROTECT · RESTORE · EMPOWER
+            </span>
           </div>
 
-          <nav className="hidden items-center gap-7 md:flex">
-            <LiveClock />
+          <nav className="order-4 hidden w-full items-center justify-center gap-4 border-t border-slate-100 pt-3 md:flex xl:gap-8">
 
             {navItems.map((item) => {
               const active = pathname === item.href;
@@ -162,7 +183,7 @@ export default function Navbar() {
 
           </nav>
 
-          <div className="hidden shrink-0 items-center gap-2 sm:gap-3 md:flex">
+          <div className="hidden shrink-0 items-center gap-2 md:order-none md:flex">
             <Link
               href="/report"
               className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-md transition hover:scale-[1.03] hover:shadow-red-500/35 sm:px-4"
@@ -185,7 +206,7 @@ export default function Navbar() {
             aria-label={mobileOpen ? "Close menu" : "Open menu"}
             aria-expanded={mobileOpen}
             onClick={() => setMobileOpen((prev) => !prev)}
-            className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-gray-200 bg-white text-slate-900 shadow-md transition hover:border-red-200 hover:text-red-600 md:hidden"
+            className="order-2 inline-flex h-11 w-11 items-center justify-center rounded-xl border border-gray-200 bg-white text-slate-900 shadow-sm transition hover:border-red-200 hover:text-red-600 md:hidden"
           >
             {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
@@ -214,7 +235,7 @@ export default function Navbar() {
             className="fixed inset-0 z-[85] bg-slate-950/55 backdrop-blur-[2px] md:hidden"
           />
 
-          <div className="fixed inset-x-0 top-[76px] z-[90] mx-4 rounded-[1.75rem] border border-slate-200 bg-white p-4 shadow-2xl md:hidden">
+          <div className="fixed inset-x-0 top-[112px] z-[90] mx-4 max-h-[calc(100dvh-128px)] overflow-y-auto rounded-[1.75rem] border border-slate-200 bg-white p-4 shadow-2xl md:hidden">
             <div className="mb-4 rounded-2xl bg-gradient-to-r from-blue-900 to-slate-900 px-4 py-4 text-white">
               <div className="flex items-center gap-3">
                 <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10">

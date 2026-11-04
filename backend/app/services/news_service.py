@@ -39,8 +39,10 @@ def create_news_post(
         featured_image_url=payload.featured_image_url,
         video_url=payload.video_url,
         external_link=payload.external_link,
+        source_links=[source.model_dump(mode="json") for source in payload.source_links],
         is_featured=payload.is_featured,
         show_in_ticker=payload.show_in_ticker,
+        ticker_pinned=payload.ticker_pinned,
         ticker_order=payload.ticker_order,
         status=payload.status.lower(),
         published_at=published_at,
@@ -54,6 +56,9 @@ def create_news_post(
 
 def update_news_post(db: Session, news_post: NewsPost, payload: NewsPostUpdate) -> NewsPost:
     data = payload.model_dump(exclude_unset=True)
+
+    if "source_links" in data and data["source_links"] is not None:
+        data["source_links"] = [source.model_dump(mode="json") for source in payload.source_links]
 
     if "content" in data and data["content"] is not None:
         data["content"] = normalize_news_content(data["content"])

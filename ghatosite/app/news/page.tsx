@@ -20,6 +20,7 @@ type NewsItem = {
   featured_image_url?: string | null;
   video_url?: string | null;
   external_link?: string | null;
+  source_links?: { name: string; url: string }[];
   is_featured: boolean;
   show_in_ticker: boolean;
   ticker_order: number;
@@ -42,7 +43,7 @@ export default function NewsPage() {
       try {
         setIsLoading(true);
 
-        const res = await fetch(`${API_BASE}/api/v1/news/public?limit=50`, {
+        const res = await fetch(`${API_BASE}/api/v1/news/public?limit=100`, {
           cache: "no-store",
         });
 
@@ -230,15 +231,34 @@ export default function NewsPage() {
     };
   };
 
-  const featuredNews = useMemo(
-    () => newsItems.find((item) => item.is_featured) || newsItems[0],
+  const chronologicalNews = useMemo(
+    () => [...newsItems].sort((a, b) => {
+      const aDate = new Date(a.published_at || a.created_at).getTime();
+      const bDate = new Date(b.published_at || b.created_at).getTime();
+      return bDate - aDate || b.id - a.id;
+    }),
     [newsItems]
   );
-
-  const otherNews = useMemo(() => {
-    if (!featuredNews) return [];
-    return newsItems.filter((item) => item.id !== featuredNews.id);
-  }, [newsItems, featuredNews]);
+  const featuredNews = chronologicalNews[0];
+  const groupedNews = useMemo(() => {
+    const groups = new Map<string, { label: string; items: NewsItem[] }>();
+    const currentYear = new Date().getFullYear();
+    for (const item of chronologicalNews.slice(1)) {
+      const date = new Date(item.published_at || item.created_at);
+      const validDate = !Number.isNaN(date.getTime());
+      const year = date.getFullYear();
+      const currentYearStory = validDate && year === currentYear;
+      const key = validDate ? currentYearStory ? `${year}-${date.getMonth()}` : `${year}` : "undated";
+      const label = validDate
+        ? currentYearStory
+          ? new Intl.DateTimeFormat("en-NG", { month: "long", year: "numeric" }).format(date)
+          : String(year)
+        : "Earlier updates";
+      if (!groups.has(key)) groups.set(key, { label, items: [] });
+      groups.get(key)!.items.push(item);
+    }
+    return [...groups.values()];
+  }, [chronologicalNews]);
 
   return (
     <main className="bg-white text-black overflow-x-hidden">
@@ -336,7 +356,7 @@ export default function NewsPage() {
 
               <div className="p-6 sm:p-8 flex flex-col justify-center">
                 <p className="text-sm font-semibold uppercase tracking-[0.16em] text-blue-900">
-                  Featured Update
+                  Latest Update
                 </p>
 
                 {featuredNews.headline && (
@@ -351,9 +371,9 @@ export default function NewsPage() {
                 </p>
 
                 <div className="mt-8 flex flex-col sm:flex-row gap-3">
-                  {featuredNews.external_link ? (
+                  {(featuredNews.source_links?.[0]?.url || featuredNews.external_link) ? (
                     <a
-                      href={featuredNews.external_link}
+                      href={featuredNews.source_links?.[0]?.url || featuredNews.external_link || "#"}
                       target="_blank"
                       rel="noreferrer"
                       className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-900 px-5 py-3.5 font-semibold text-white hover:bg-blue-800 transition"
@@ -378,6 +398,12 @@ export default function NewsPage() {
                     <span>Contact GAHTO</span>
                   </Link>
                 </div>
+                {(featuredNews.source_links?.length || 0) > 0 && (
+                  <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-sm text-blue-900">
+                    <span className="font-semibold text-slate-600">Coverage:</span>
+                    {featuredNews.source_links?.map((source) => <a key={source.url} href={source.url} target="_blank" rel="noreferrer" className="font-semibold underline underline-offset-2">{source.name}</a>)}
+                  </div>
+                )}
               </div>
             </div>
           ) : (
@@ -394,9 +420,14 @@ export default function NewsPage() {
       {/* NEWS GRID */}
       <section id="news-grid" className="pb-16 sm:pb-20 px-4 sm:px-6">
         <div className="max-w-6xl mx-auto">
-          {otherNews.length > 0 ? (
-            <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6 sm:gap-8">
-              {otherNews.map((item) => {
+          {groupedNews.length > 0 ? groupedNews.map((group) => (
+            <section key={group.label} className="mb-12 last:mb-0" aria-label={`${group.label} news archive`}>
+              <div className="mb-6 flex items-end justify-between border-b border-slate-200 pb-3">
+                <h2 className="text-2xl font-bold text-blue-950">{group.label}</h2>
+                <span className="text-sm text-slate-500">{group.items.length} {group.items.length === 1 ? "story" : "stories"}</span>
+              </div>
+              <div className="grid gap-6 sm:gap-8 md:grid-cols-2 xl:grid-cols-3">
+              {group.items.map((item) => {
                 const itemVideoUrl = normalizeVideoUrl(item.video_url);
                 const itemYouTubeUrl = normalizeYouTubeEmbedUrl(item.video_url);
                 const itemImageUrl = normalizeImageUrl(item.featured_image_url);
@@ -462,9 +493,9 @@ export default function NewsPage() {
                     </p>
 
                     <div className="mt-6">
-                      {item.external_link ? (
+                      {(item.source_links?.[0]?.url || item.external_link) ? (
                         <a
-                          href={item.external_link}
+                          href={item.source_links?.[0]?.url || item.external_link || "#"}
                           target="_blank"
                           rel="noreferrer"
                           className="inline-flex items-center gap-2 text-sm font-semibold text-blue-900 hover:text-blue-700 transition"
@@ -477,13 +508,15 @@ export default function NewsPage() {
                           <span>Internal update</span>
                         </span>
                       )}
+                      {(item.source_links?.length || 0) > 0 && <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-xs">{item.source_links?.map((source) => <a key={source.url} href={source.url} target="_blank" rel="noreferrer" className="font-medium text-blue-900 underline underline-offset-2">{source.name}</a>)}</div>}
                     </div>
                   </div>
                 </article>
               );
             })}
-            </div>
-          ) : !isLoading && featuredNews ? (
+              </div>
+            </section>
+          )) : !isLoading && featuredNews ? (
             <div className="rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm">
               <p className="text-gray-600">
                 More updates will appear here as additional news is published.

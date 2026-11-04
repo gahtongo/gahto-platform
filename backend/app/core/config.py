@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     FIRST_SUPERADMIN_PASSWORD: str = ""
 
     MEDIA_UPLOAD_DIR: str = "uploads"
+    PRIVATE_EVIDENCE_DIR: str = "private_evidence"
     MAX_UPLOAD_SIZE_MB: int = 20
 
     SMTP_HOST: str = ""

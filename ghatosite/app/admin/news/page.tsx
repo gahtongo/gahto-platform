@@ -24,8 +24,10 @@ type NewsItem = {
   featured_image_url?: string | null;
   video_url?: string | null;
   external_link?: string | null;
+  source_links?: { name: string; url: string }[];
   is_featured: boolean;
   show_in_ticker: boolean;
+  ticker_pinned?: boolean;
   ticker_order: number;
   status: string;
   published_at?: string | null;
@@ -43,8 +45,10 @@ type NewsFormState = {
   featured_image_url: string;
   video_url: string;
   external_link: string;
+  source_links_text: string;
   is_featured: boolean;
   show_in_ticker: boolean;
+  ticker_pinned: boolean;
   ticker_order: number;
   status: string;
 };
@@ -58,8 +62,10 @@ const initialForm: NewsFormState = {
   featured_image_url: "",
   video_url: "",
   external_link: "",
+  source_links_text: "",
   is_featured: false,
   show_in_ticker: false,
+  ticker_pinned: false,
   ticker_order: 0,
   status: "draft",
 };
@@ -146,8 +152,10 @@ export default function AdminNewsPage() {
       featured_image_url: item.featured_image_url || "",
       video_url: item.video_url || "",
       external_link: item.external_link || "",
+      source_links_text: (item.source_links || []).map((source) => `${source.name} | ${source.url}`).join("\n"),
       is_featured: item.is_featured,
       show_in_ticker: item.show_in_ticker,
+      ticker_pinned: item.ticker_pinned || false,
       ticker_order: item.ticker_order || 0,
       status: item.status || "draft",
     });
@@ -191,6 +199,15 @@ export default function AdminNewsPage() {
       return;
     }
 
+    const sourceLinks = form.source_links_text.split("\n").map((line) => line.trim()).filter(Boolean).map((line) => {
+      const separator = line.indexOf("|");
+      return separator < 0 ? { name: "", url: "" } : { name: line.slice(0, separator).trim(), url: line.slice(separator + 1).trim() };
+    });
+    if (sourceLinks.length > 12 || sourceLinks.some((source) => source.name.length < 2 || !/^https?:\/\/[^\s]+$/i.test(source.url))) {
+      setErrorText("Enter up to 12 sources, one per line: Outlet name | https://example.com/story");
+      return;
+    }
+
     try {
       setIsSaving(true);
 
@@ -203,8 +220,10 @@ export default function AdminNewsPage() {
         featured_image_url: form.featured_image_url || null,
         video_url: form.video_url || null,
         external_link: form.external_link || null,
+        source_links: sourceLinks,
         is_featured: form.is_featured,
         show_in_ticker: form.show_in_ticker,
+        ticker_pinned: form.ticker_pinned,
         ticker_order: Number(form.ticker_order) || 0,
         status: form.status,
       };
@@ -742,6 +761,18 @@ export default function AdminNewsPage() {
             />
           </div>
 
+          <div>
+            <label className="mb-2 block text-sm font-semibold text-slate-700">Additional coverage sources</label>
+            <textarea
+              value={form.source_links_text}
+              onChange={(e) => handleChange("source_links_text", e.target.value)}
+              rows={3}
+              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-900"
+              placeholder={"Channels Television | https://example.com/story\nAnother outlet | https://example.com/story"}
+            />
+            <p className="mt-1 text-xs text-slate-500">One outlet and URL per line. Keep the existing External Link for older posts.</p>
+          </div>
+
           <div className="grid gap-5 lg:grid-cols-3">
             <div>
               <label className="mb-2 block text-sm font-semibold text-slate-700">
@@ -915,6 +946,10 @@ export default function AdminNewsPage() {
               <span className="text-sm font-semibold text-slate-800">
                 Show in live ticker
               </span>
+            </label>
+            <label className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+              <input type="checkbox" checked={form.ticker_pinned} onChange={(e) => handleChange("ticker_pinned", e.target.checked)} className="h-4 w-4 rounded border-slate-300" />
+              <span className="text-sm font-semibold text-slate-800">Keep in ticker beyond one month</span>
             </label>
           </div>
 

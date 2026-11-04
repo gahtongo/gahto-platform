@@ -24,6 +24,7 @@ type NewsItem = {
   featured_image_url?: string | null;
   video_url?: string | null;
   external_link?: string | null;
+  source_links?: { name: string; url: string }[];
   is_featured: boolean;
   show_in_ticker: boolean;
   ticker_order: number;
@@ -33,6 +34,13 @@ type NewsItem = {
   created_at: string;
   updated_at: string;
 };
+
+const impactFigures = [
+  { key: "impact_cases_reported", fallback: "2,000+", label: "Cases Reported" },
+  { key: "impact_victims_supported", fallback: "250+", label: "Victims Supported" },
+  { key: "impact_communities_reached", fallback: "50+", label: "Communities Reached" },
+  { key: "impact_volunteers", fallback: "150+", label: "Volunteers" },
+];
 
 export default function Home() {
   const images = [
@@ -44,9 +52,19 @@ export default function Home() {
   const [current, setCurrent] = useState(0);
   const [newsItems, setNewsItems] = useState<NewsItem[]>([]);
   const [isLoadingNews, setIsLoadingNews] = useState(true);
+  const [publicSettings, setPublicSettings] = useState<Record<string, string>>({});
 
   const API_BASE =
     process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000";
+
+  useEffect(() => {
+    fetch(`${API_BASE}/api/v1/settings/public`, { cache: "no-store" })
+      .then((response) => response.ok ? response.json() : [])
+      .then((items: { key: string; value: string }[]) =>
+        setPublicSettings(Object.fromEntries(items.map(({ key, value }) => [key, value])))
+      )
+      .catch(() => setPublicSettings({}));
+  }, [API_BASE]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -175,7 +193,7 @@ export default function Home() {
         category.includes("press") ||
         category.includes("rescue") ||
         category.includes("breaking") ||
-        Boolean(item.external_link)
+        Boolean(item.external_link || item.source_links?.length)
       );
     });
 
@@ -229,24 +247,25 @@ export default function Home() {
             <div className="max-w-3xl">
               <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-[11px] sm:text-xs font-medium uppercase tracking-[0.18em] text-white/90 backdrop-blur-md shadow-[0_8px_30px_rgba(0,0,0,0.25)]">
                 <span className="h-2 w-2 rounded-full bg-red-500 shadow-[0_0_12px_rgba(239,68,68,0.9)]" />
-                Safe. Confidential. Actionable.
+                Welcome to GAHTO
               </div>
 
               <h1 className="mt-6 text-4xl sm:text-5xl md:text-7xl font-extrabold leading-[1.02] tracking-tight text-white">
-                Stand Against
+                Freedom must go
                 <br />
-                <span className="text-white">Human Trafficking.</span>
+                <span className="text-white">beyond rescue.</span>
                 <br />
                 <span className="bg-gradient-to-r from-red-500 via-red-400 to-orange-300 bg-clip-text text-transparent drop-shadow-[0_0_16px_rgba(239,68,68,0.35)]">
-                  Report. Protect. Restore.
+                  Freedom that lasts.
                 </span>
               </h1>
 
               <p className="mt-6 text-base sm:text-lg md:text-xl text-gray-200/95 max-w-2xl leading-relaxed">
-                GAHTO provides a secure platform for reporting cases,
-                accessing urgent support, and strengthening the collective
-                response against human trafficking through awareness,
-                advocacy, and survivor-centered action.
+                The Global Anti Human Trafficking Organization works to prevent
+                trafficking and help people move from danger towards safety,
+                recovery and opportunity. Our commitment is to rescue, protect,
+                restore and empower—through trusted reporting, coordinated action
+                and support that continues after a person returns home.
               </p>
 
               <div className="mt-8 flex flex-wrap gap-3">
@@ -395,42 +414,15 @@ export default function Home() {
       <section className="py-16 px-4 sm:px-6 text-center">
         <h2 className="text-2xl font-bold mb-10">Our Impact</h2>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-          <div className="group">
-            <h3 className="text-3xl sm:text-4xl font-bold text-red-600 transition duration-300 group-hover:scale-110 group-hover:text-red-500 group-hover:drop-shadow-[0_0_10px_rgba(239,68,68,0.6)]">
-              120+
-            </h3>
-            <p className="text-gray-600 mt-1 text-sm sm:text-base">
-              Cases Reported
-            </p>
-          </div>
-
-          <div className="group">
-            <h3 className="text-3xl sm:text-4xl font-bold text-blue-900 transition duration-300 group-hover:scale-110 group-hover:text-blue-800 group-hover:drop-shadow-[0_0_10px_rgba(37,99,235,0.35)]">
-              80+
-            </h3>
-            <p className="text-gray-600 mt-1 text-sm sm:text-base">
-              Victims Supported
-            </p>
-          </div>
-
-          <div className="group">
-            <h3 className="text-3xl sm:text-4xl font-bold transition duration-300 group-hover:scale-110">
-              25+
-            </h3>
-            <p className="text-gray-600 mt-1 text-sm sm:text-base">
-              Communities Reached
-            </p>
-          </div>
-
-          <div className="group">
-            <h3 className="text-3xl sm:text-4xl font-bold transition duration-300 group-hover:scale-110">
-              50+
-            </h3>
-            <p className="text-gray-600 mt-1 text-sm sm:text-base">
-              Volunteers
-            </p>
-          </div>
+        <div className="mx-auto grid max-w-6xl grid-cols-2 gap-4 md:grid-cols-4">
+          {impactFigures.map(({ key, fallback, label }) => (
+            <div key={key} className="rounded-2xl border border-slate-200 bg-white px-4 py-7 shadow-sm">
+              <h3 className="text-3xl font-extrabold tracking-tight text-blue-900 sm:text-4xl">
+                {publicSettings[key] || fallback}
+              </h3>
+              <p className="mt-2 text-sm font-medium text-slate-600 sm:text-base">{label}</p>
+            </div>
+          ))}
         </div>
       </section>
 
@@ -508,9 +500,9 @@ export default function Home() {
                         <span>View all updates</span>
                       </Link>
 
-                      {featuredPress.external_link ? (
+                      {(featuredPress.source_links?.[0]?.url || featuredPress.external_link) ? (
                         <a
-                          href={featuredPress.external_link}
+                          href={featuredPress.source_links?.[0]?.url || featuredPress.external_link || "#"}
                           target="_blank"
                           rel="noreferrer"
                           className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-900 px-5 py-3 font-semibold text-white hover:bg-blue-800 transition"
@@ -562,9 +554,9 @@ export default function Home() {
                         </p>
 
                         <div className="mt-5">
-                          {item.external_link ? (
+                          {(item.source_links?.[0]?.url || item.external_link) ? (
                             <a
-                              href={item.external_link}
+                              href={item.source_links?.[0]?.url || item.external_link || "#"}
                               target="_blank"
                               rel="noreferrer"
                               className="inline-flex items-center gap-2 text-sm font-semibold text-blue-900 hover:text-blue-700 transition"

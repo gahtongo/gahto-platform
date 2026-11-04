@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, Integer, String, Text
+from sqlalchemy import Boolean, DateTime, Integer, JSON, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
@@ -21,9 +21,11 @@ class NewsPost(Base):
     featured_image_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     video_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     external_link: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    source_links: Mapped[list[dict]] = mapped_column(JSON, default=list, nullable=False)
 
     is_featured: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     show_in_ticker: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    ticker_pinned: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     ticker_order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 
     status: Mapped[str] = mapped_column(String(50), default="draft", nullable=False)

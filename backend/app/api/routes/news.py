@@ -1,4 +1,8 @@
+from calendar import monthrange
+from datetime import datetime, timezone
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 
 from app.api.routes.auth import require_content_admin
@@ -15,6 +19,13 @@ from app.services.news_service import create_news_post, update_news_post
 from app.services.ai_triage_service import extract_news_from_content, AIExtractedNews
 
 router = APIRouter(prefix="/news", tags=["News"])
+
+
+def ticker_cutoff(now: datetime | None = None) -> datetime:
+    """Return the same day one calendar month earlier, clamped to that month's end."""
+    now = now or datetime.now(timezone.utc)
+    year, month = (now.year - 1, 12) if now.month == 1 else (now.year, now.month - 1)
+    return now.replace(year=year, month=month, day=min(now.day, monthrange(year, month)[1]), tzinfo=None)
 
 
 @router.get("/public", response_model=list[NewsPostResponse])
@@ -38,7 +49,14 @@ def get_news_ticker(
 ):
     return (
         db.query(NewsPost)
-        .filter(NewsPost.status == "published", NewsPost.show_in_ticker == True)  # noqa: E712
+        .filter(
+            NewsPost.status == "published",
+            NewsPost.show_in_ticker.is_(True),
+            or_(
+                NewsPost.ticker_pinned.is_(True),
+                func.coalesce(NewsPost.published_at, NewsPost.created_at) >= ticker_cutoff(),
+            ),
+        )
         .order_by(NewsPost.ticker_order.asc(), NewsPost.published_at.desc(), NewsPost.created_at.desc())
         .limit(limit)
         .all()

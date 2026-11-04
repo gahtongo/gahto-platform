@@ -44,6 +44,39 @@ type ReportItem = {
 
 type ReportStatus = "new" | "in_review" | "resolved" | "archived";
 
+function EvidenceViewer({ reportId }: { reportId: number }) {
+  const authFetch = useAuthApi();
+  const [preview, setPreview] = useState<{ url: string; type: string } | null>(null);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000";
+
+  useEffect(() => () => { if (preview) URL.revokeObjectURL(preview.url); }, [preview]);
+
+  const openEvidence = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const response = await authFetch(`${apiBase}/api/v1/reports/admin/${reportId}/evidence`, { cache: "no-store" });
+      if (!response.ok) throw new Error("Evidence is unavailable. Ask an administrator to check the private-file migration.");
+      const blob = await response.blob();
+      setPreview({ url: URL.createObjectURL(blob), type: blob.type });
+    } catch {
+      setError("Could not load this evidence securely.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return <div className="mt-3 text-sm text-slate-700">
+    {!preview && <button type="button" onClick={openEvidence} disabled={loading} className="rounded-xl bg-blue-900 px-4 py-2 font-semibold text-white disabled:opacity-60">{loading ? "Loading evidence..." : "View evidence securely"}</button>}
+    {error && <p role="alert" className="mt-2 text-red-700">{error}</p>}
+    {preview?.type.startsWith("video/") && <video controls src={preview.url} className="max-h-72 w-full rounded-xl" />}
+    {preview?.type.startsWith("image/") && <img src={preview.url} alt="Report evidence" className="max-h-72 w-full rounded-xl object-contain" />}
+    {preview && !preview.type.startsWith("video/") && !preview.type.startsWith("image/") && <a href={preview.url} download={`report-${reportId}-evidence`} className="font-semibold text-blue-900 underline">Download evidence</a>}
+  </div>;
+}
+
 const statusOptions: ReportStatus[] = [
   "new",
   "in_review",
@@ -576,44 +609,7 @@ export default function AdminReportsPage() {
                               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
                                 Evidence upload
                               </p>
-                              <div className="mt-3 text-sm text-slate-700">
-                                {report.evidence_url.endsWith(".mp4") ||
-                                report.evidence_url.endsWith(".webm") ||
-                                report.evidence_url.endsWith(".mov") ? (
-                                  <video
-                                    controls
-                                    className="max-h-72 w-full rounded-xl"
-                                    src={`${API_BASE}${report.evidence_url}`}
-                                  />
-                                ) : report.evidence_url.endsWith(".jpg") ||
-                                  report.evidence_url.endsWith(".jpeg") ||
-                                  report.evidence_url.endsWith(".png") ||
-                                  report.evidence_url.endsWith(".gif") ? (
-                                  <img
-                                    src={`${API_BASE}${report.evidence_url}`}
-                                    alt="Evidence"
-                                    className="max-h-72 w-full rounded-xl object-contain"
-                                  />
-                                ) : report.evidence_url.endsWith(".pdf") ? (
-                                  <a
-                                    href={`${API_BASE}${report.evidence_url}`}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="text-blue-700 hover:underline"
-                                  >
-                                    Open attached PDF evidence
-                                  </a>
-                                ) : (
-                                  <a
-                                    href={`${API_BASE}${report.evidence_url}`}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="text-blue-700 hover:underline"
-                                  >
-                                    Open evidence file
-                                  </a>
-                                )}
-                              </div>
+                              <EvidenceViewer reportId={report.id} />
                             </div>
                           ) : null}
                         </div>

@@ -2,6 +2,7 @@ from pathlib import Path
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
 from app.api.routes.auth import get_current_admin
@@ -14,6 +15,7 @@ from app.services.report_service import create_report, list_reports, update_repo
 
 router = APIRouter(prefix="/reports", tags=["Reports"])
 ALLOWED_EVIDENCE_TYPES = {"image/jpeg", "image/png", "image/webp", "video/mp4", "video/webm"}
+EVIDENCE_EXTENSIONS = {"image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp", "video/mp4": ".mp4", "video/webm": ".webm"}
 
 
 @router.post(
@@ -47,14 +49,22 @@ async def submit_report_with_evidence(
     evidence_file: UploadFile | None = File(None),
     db: Session = Depends(get_db),
 ):
-    evidence_url = None
+    payload = ReportCreate(
+        case_type=case_type, urgency=urgency, description=description,
+        location=location, incident_time=incident_time, additional_notes=additional_notes,
+        is_anonymous=is_anonymous, reporter_name=reporter_name,
+        reporter_email=reporter_email, reporter_phone=reporter_phone,
+    )
+    upload_path = None
     if evidence_file is not None:
         # Browsers often append codec info to WebM, e.g., "video/webm; codecs=vp8,opus"
         base_content_type = evidence_file.content_type.split(";")[0].strip()
         if base_content_type not in ALLOWED_EVIDENCE_TYPES:
             raise HTTPException(status_code=415, detail="Unsupported evidence file type")
-        filename = f"{uuid4().hex}_{Path(evidence_file.filename).name}"
-        upload_path = Path(settings.MEDIA_UPLOAD_DIR) / filename
+        filename = f"{uuid4().hex}{EVIDENCE_EXTENSIONS[base_content_type]}"
+        evidence_dir = Path(settings.PRIVATE_EVIDENCE_DIR)
+        evidence_dir.mkdir(parents=True, exist_ok=True, mode=0o700)
+        upload_path = evidence_dir / filename
         max_bytes = settings.MAX_UPLOAD_SIZE_MB * 1024 * 1024
         bytes_written = 0
         with upload_path.open("wb") as buffer:
@@ -65,23 +75,35 @@ async def submit_report_with_evidence(
                     upload_path.unlink(missing_ok=True)
                     raise HTTPException(status_code=413, detail="Evidence file is too large")
                 buffer.write(chunk)
-        evidence_url = f"/uploads/{filename}"
+        payload.evidence_url = f"private:{filename}"
 
-    payload = ReportCreate(
-        case_type=case_type,
-        urgency=urgency,
-        description=description,
-        location=location,
-        incident_time=incident_time,
-        additional_notes=additional_notes,
-        is_anonymous=is_anonymous,
-        reporter_name=reporter_name,
-        reporter_email=reporter_email,
-        reporter_phone=reporter_phone,
-        evidence_url=evidence_url,
-    )
+    try:
+        return create_report(db, payload)
+    except Exception:
+        db.rollback()
+        persisted = payload.evidence_url and db.query(Report.id).filter(Report.evidence_url == payload.evidence_url).first()
+        if upload_path is not None and not persisted:
+            upload_path.unlink(missing_ok=True)
+        raise
 
-    return create_report(db, payload)
+
+@router.get("/admin/{report_id}/evidence")
+def get_report_evidence_admin(
+    report_id: int,
+    db: Session = Depends(get_db),
+    current_admin: AdminUser = Depends(get_current_admin),
+):
+    _ = current_admin
+    report = db.query(Report).filter(Report.id == report_id).first()
+    if not report or not report.evidence_url or not report.evidence_url.startswith("private:"):
+        raise HTTPException(status_code=404, detail="Evidence not found")
+    filename = report.evidence_url.removeprefix("private:")
+    if Path(filename).name != filename or filename in {"", ".", ".."}:
+        raise HTTPException(status_code=404, detail="Evidence not found")
+    evidence_path = Path(settings.PRIVATE_EVIDENCE_DIR) / filename
+    if not evidence_path.is_file():
+        raise HTTPException(status_code=404, detail="Evidence not found")
+    return FileResponse(evidence_path, headers={"Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff"})
 
 
 @router.get("/admin", response_model=list[ReportResponse])

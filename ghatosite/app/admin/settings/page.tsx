@@ -40,6 +40,13 @@ const orderedKeys = [
   "nigeria_office_address",
   "abuja_office_address",
   "mali_office_address",
+  "impact_cases_reported",
+  "impact_victims_supported",
+  "impact_communities_reached",
+  "impact_volunteers",
+  "seasonal_theme",
+  "seasonal_start",
+  "seasonal_end",
 ];
 
 const keyMeta: Record<
@@ -48,11 +55,18 @@ const keyMeta: Record<
     label: string;
     helper: string;
     icon: React.ComponentType<{ className?: string }>;
-    group: "Emergency & Support" | "Office Lines" | "Social Channels" | "System Config";
+    group: "Emergency & Support" | "Office Lines" | "Social Channels" | "System Config" | "Our Impact" | "Seasonal Branding";
     placeholder: string;
-    type?: "text" | "file";
+    type?: "text" | "file" | "date" | "theme";
   }
 > = {
+  impact_cases_reported: { label: "Cases Reported", helper: "Approved public impact figure.", icon: Settings2, group: "Our Impact", placeholder: "2,000+" },
+  impact_victims_supported: { label: "Victims Supported", helper: "Approved public impact figure.", icon: Settings2, group: "Our Impact", placeholder: "250+" },
+  impact_communities_reached: { label: "Communities Reached", helper: "Approved public impact figure.", icon: Settings2, group: "Our Impact", placeholder: "50+" },
+  impact_volunteers: { label: "Volunteers", helper: "Approved public impact figure.", icon: Settings2, group: "Our Impact", placeholder: "150+" },
+  seasonal_theme: { label: "Decoration", helper: "Choose a decorative accent; the official GAHTO logo remains unchanged.", icon: Sparkles, group: "Seasonal Branding", placeholder: "Off", type: "theme" },
+  seasonal_start: { label: "Start date", helper: "First date the decoration may appear.", icon: Sparkles, group: "Seasonal Branding", placeholder: "YYYY-MM-DD", type: "date" },
+  seasonal_end: { label: "End date", helper: "Decoration automatically disappears after this date.", icon: Sparkles, group: "Seasonal Branding", placeholder: "YYYY-MM-DD", type: "date" },
   founder_signature: {
     label: "Founder Signature",
     helper: "Upload the signature image for the back of the GAHTO ID Cards.",
@@ -235,20 +249,34 @@ export default function AdminSettingsPage() {
 
   const saveSetting = async (key: string) => {
     const setting = settings[key];
-    if (!setting) return;
+    if (!setting && !keyMeta[key]) return;
+    const value = setting?.value?.trim() || "";
+    if (key.startsWith("impact_") && !/^\d[\d,]*\+?$/.test(value)) {
+      setErrorText("Enter a number such as 250+ or 2,000+.");
+      return;
+    }
+    if (key === "seasonal_theme" && !["off", "christmas"].includes(value)) {
+      setErrorText("Choose Off or Christmas.");
+      return;
+    }
+    if ((key === "seasonal_start" || key === "seasonal_end") && value && !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+      setErrorText("Enter a valid date in YYYY-MM-DD format.");
+      return;
+    }
 
     try {
       setSavingKey(key);
       setStatusText("");
       setErrorText("");
 
-      const res = await authFetch(`${API_BASE}/api/v1/settings/admin/${key}`, {
-        method: "PUT",
+      const exists = Boolean(setting?.id);
+      const res = await authFetch(exists ? `${API_BASE}/api/v1/settings/admin/${key}` : `${API_BASE}/api/v1/settings/admin`, {
+        method: exists ? "PUT" : "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          value: setting.value,
+          ...(exists ? { value } : { key, value, is_public: true, description: keyMeta[key].helper }),
         }),
       });
 
@@ -277,10 +305,12 @@ export default function AdminSettingsPage() {
       "Emergency & Support": [],
       "Office Lines": [],
       "Social Channels": [],
+      "Our Impact": [],
+      "Seasonal Branding": [],
     };
 
     orderedKeys.forEach((key) => {
-      if (settings[key] && keyMeta[key]) {
+      if ((settings[key] || key.startsWith("impact_") || key.startsWith("seasonal_")) && keyMeta[key]) {
         sections[keyMeta[key].group].push(key);
       }
     });
@@ -451,8 +481,14 @@ export default function AdminSettingsPage() {
                                 className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                               />
                            </div>
+                        ) : meta.type === "theme" ? (
+                          <select value={setting?.value || "off"} onChange={(e) => updateValue(key, e.target.value)} className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900">
+                            <option value="off">Off</option>
+                            <option value="christmas">Christmas cap</option>
+                          </select>
                         ) : (
                           <input
+                            type={meta.type === "date" ? "date" : "text"}
                             value={setting?.value || ""}
                             onChange={(e) => updateValue(key, e.target.value)}
                             placeholder={meta.placeholder}

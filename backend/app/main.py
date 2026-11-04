@@ -46,6 +46,10 @@ if settings.is_production:
 
 upload_dir = Path(settings.MEDIA_UPLOAD_DIR)
 upload_dir.mkdir(parents=True, exist_ok=True)
+private_evidence_dir = Path(settings.PRIVATE_EVIDENCE_DIR).resolve()
+if private_evidence_dir == upload_dir.resolve() or upload_dir.resolve() in private_evidence_dir.parents:
+    raise RuntimeError("PRIVATE_EVIDENCE_DIR must be outside the public uploads directory")
+private_evidence_dir.mkdir(parents=True, exist_ok=True, mode=0o700)
 
 app = FastAPI(
     title=settings.APP_NAME,
